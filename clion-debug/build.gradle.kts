@@ -19,8 +19,10 @@ dependencies {
 
     intellijPlatform {
         clion(providers.gradleProperty("runIdeVersion"))
-        bundledModule("intellij.platform.dap")
         bundledModule("intellij.cidr.debugger.core")
         bundledPlugin("com.intellij.nativeDebug")
+        // Compilation Database ExternalSystem — feeds IntelliSense from xmake's generated
+        // compile_commands.json (io.xmake.debug.clion.CompDBIntegration).
+        bundledPlugin("com.intellij.clion-compdb")
     }
 }
