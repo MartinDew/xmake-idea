@@ -21,6 +21,7 @@
 package io.xmake.actions
 
 import com.intellij.openapi.project.Project
+import io.xmake.clion.XMakeClionTargetSync
 import io.xmake.project.console.XMakeConsole
 import io.xmake.run.command.XMakeCommandFactory
 import io.xmake.run.command.XMakeConsoleOptions
@@ -46,5 +47,9 @@ class UpdateCompileCommandsAction : XMakeCommandAction() {
             XMakeConsoleOptions(showConsole = false, showProblems = true, showExitCode = true),
         )
         fetchGeneratedFile(project, toolkit, workingDirectory, "compile_commands.json")
+
+        // Re-publish targets and feed the freshly generated database to CLion IntelliSense
+        // (no-op on IDEA Community and for remote toolkits).
+        XMakeClionTargetSync.getInstance(project).requestSync()
     }
 }
