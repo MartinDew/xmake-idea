@@ -21,8 +21,7 @@ import com.intellij.openapi.project.Project
 
 /**
  * Supplies the CLion-only integrations the core plugin cannot depend on directly: the native
- * "Xmake Executable" run configuration type, CLion Custom Build Targets, and the Compilation
- * Database IntelliSense feed.
+ * "Xmake Executable" run configuration type and the Compilation Database IntelliSense feed.
  *
  * The single implementation lives in the optional `xmake-idea.clion-debug` content module and is
  * contributed through the `io.xmake.clionSupport` extension point, mirroring [io.xmake.debug.XMakeDebugSupport].
@@ -37,11 +36,11 @@ interface XMakeClionSupport {
     fun registerExecutableRunConfigurationType(): Boolean
 
     /**
-     * Replace the plugin-managed CLion Custom Build Targets (and their ready-to-run "Xmake
-     * Executable" configurations) with the ones described by [spec]. Returns `true` if the sync
-     * was scheduled/applied.
+     * Create or refresh one ready-to-run "Xmake Executable" run configuration per executable target
+     * in [spec], each with its resolved executable path pre-filled and a build step that builds the
+     * target for the active XMake build profile. Returns `true` if the sync was scheduled/applied.
      */
-    fun syncBuildTargets(spec: XMakeBuildTargetSpec): Boolean
+    fun syncExecutableRunConfigurations(spec: XMakeExecutableTargetSpec): Boolean
 
     /**
      * Link (if needed) and refresh CLion's Compilation Database from the `compile_commands.json`
@@ -58,22 +57,14 @@ interface XMakeClionSupport {
     }
 }
 
-/** The xmake targets to publish to CLion, resolved in one build-profile context. */
-data class XMakeBuildTargetSpec(
+/** The xmake executable targets to expose in CLion as native run configurations. */
+data class XMakeExecutableTargetSpec(
     val project: Project,
-    val xmakeBinary: String,
-    val workingDirectory: String,
-    val projectName: String,
-    val targets: List<XMakeBuildTargetInfo>,
+    val targets: List<XMakeExecutableTarget>,
 )
 
-/** One xmake target and how CLion should build, clean, and (for binaries) run it. */
-data class XMakeBuildTargetInfo(
+/** One runnable xmake target and its resolved local executable path. */
+data class XMakeExecutableTarget(
     val name: String,
-    /** Absolute local path to the built executable, or `null` for a non-runnable target. */
-    val executablePath: String?,
-    val buildArguments: List<String>,
-    val cleanArguments: List<String>,
-) {
-    val isExecutable: Boolean get() = executablePath != null
-}
+    val executablePath: String,
+)

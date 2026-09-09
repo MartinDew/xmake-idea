@@ -17,8 +17,8 @@
 package io.xmake.debug.clion
 
 import com.intellij.openapi.project.Project
-import io.xmake.clion.XMakeBuildTargetSpec
 import io.xmake.clion.XMakeClionSupport
+import io.xmake.clion.XMakeExecutableTargetSpec
 import io.xmake.debug.clion.utils.Logger
 
 /**
@@ -36,12 +36,12 @@ class ClionSupport : XMakeClionSupport {
         return XMakeRunConfigRegistrar.register()
     }
 
-    override fun syncBuildTargets(spec: XMakeBuildTargetSpec): Boolean {
-        if (!CustomBuildTargetsIntegration.isAvailable()) {
-            Logger.d(TAG, "Custom Build Targets subsystem not available")
+    override fun syncExecutableRunConfigurations(spec: XMakeExecutableTargetSpec): Boolean {
+        if (!XMakeExecutableConfigIntegration.isAvailable()) {
+            Logger.d(TAG, "External run configuration subsystem not available")
             return false
         }
-        return CustomBuildTargetsIntegration.syncBuildTargets(spec)
+        return XMakeExecutableConfigIntegration.syncExecutableRunConfigurations(spec)
     }
 
     override fun attachCompileCommands(project: Project, compileCommandsPath: String): Boolean {

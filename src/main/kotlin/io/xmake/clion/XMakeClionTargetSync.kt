@@ -38,8 +38,9 @@ import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Publishes the active build profile's xmake targets to CLion as Custom Build Targets (with
- * ready-to-run "Xmake Executable" configurations) and keeps CLion's Compilation Database in sync.
+ * Keeps CLion's native "Xmake Executable" run configurations and its Compilation Database in sync
+ * with the **active** build profile: one run config per executable target, each with the target's
+ * resolved (profile-specific) executable path and a profile-aware build step.
  *
  * No-ops on IDEA Community and for remote (WSL/SSH) profiles. Requests are conflated and debounced
  * so bursts of toolkit / profile / target-list changes collapse into one sync.
@@ -87,32 +88,13 @@ class XMakeClionTargetSync(
             emptyList()
         }
 
-        if (targetNames.isNotEmpty()) {
-            support.syncBuildTargets(buildSpec(profile, context, targetNames))
+        val executableTargets = targetNames.mapNotNull { name ->
+            project.resolveXMakeTargetPath(profile, name)?.let { path -> XMakeExecutableTarget(name, path) }
+        }
+        if (executableTargets.isNotEmpty()) {
+            support.syncExecutableRunConfigurations(XMakeExecutableTargetSpec(project, executableTargets))
         }
         refreshCompileCommands(support, context.workingDirectory)
-    }
-
-    private suspend fun buildSpec(
-        profile: XMakeBuildProfile,
-        context: io.xmake.project.target.XMakeLocalProfileContext,
-        targetNames: List<String>,
-    ): XMakeBuildTargetSpec {
-        val targets = targetNames.map { name ->
-            XMakeBuildTargetInfo(
-                name = name,
-                executablePath = project.resolveXMakeTargetPath(profile, name),
-                buildArguments = listOf("build", "-y", name),
-                cleanArguments = listOf("clean", name),
-            )
-        }
-        return XMakeBuildTargetSpec(
-            project = project,
-            xmakeBinary = context.xmakeBinary,
-            workingDirectory = context.workingDirectory,
-            projectName = project.name,
-            targets = targets,
-        )
     }
 
     private fun refreshCompileCommands(support: XMakeClionSupport, workingDirectory: String) {

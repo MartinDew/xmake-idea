@@ -27,8 +27,9 @@ import io.xmake.utils.info.XMakeInfoManager
 
 /**
  * Wires the CLion-only integrations when an xmake project opens in CLion: it registers the native
- * "Xmake Executable" run configuration type and re-publishes the active build profile's targets
- * whenever the target list, the profiles, or the active execution target changes.
+ * "Xmake Executable" run configuration type and re-syncs the per-target run configurations (and the
+ * compile database) for the active build profile whenever the target list, the profiles, or the
+ * active execution target changes.
  *
  * No-ops on IDEA Community, where [XMakeClionSupport] has no extension.
  */

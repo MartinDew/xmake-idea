@@ -50,6 +50,7 @@
         <runConfigurationProducer implementation="io.xmake.run.XMakeRunConfigurationProducer"/>
         <executionTargetProvider implementation="io.xmake.run.target.XMakeBuildProfileExecutionTargetProvider"/>
         <projectTaskRunner implementation="io.xmake.build.XMakeProjectTaskRunner"/>
+        <stepsBeforeRunProvider implementation="io.xmake.clion.XMakeExecutableBuildBeforeRunTaskProvider"/>
 
         <!-- notifications -->
         <notificationGroup id="XMake.NotificationGroup" displayType="BALLOON"/>

@@ -9,7 +9,7 @@ An IntelliJ Platform plugin (`io.xmake`, published as "XMake") that integrates t
 `xmake.lua` language (lexer/parser/highlight/completion), a run configuration type, named build
 profiles surfaced as execution targets, a build/run/debug toolbar and menu, project wizards, a tool
 window console with compiler-diagnostic parsing, and optional CLion-only C/C++ debugging, native
-"Xmake Executable" run configs, Custom Build Targets, and compile-database IntelliSense.
+per-target "Xmake Executable" run configs, and compile-database IntelliSense.
 
 ## Build & test commands
 
@@ -57,15 +57,15 @@ its own `xmake-idea.clion-debug.xml`:
 | EP (`io.xmake.*`) | Root interface | CLion impl | Purpose |
 |---|---|---|---|
 | `debugSupport` | `io.xmake.debug.XMakeDebugSupport` | `ClionDebugSupport` | build an `XDebugProcessStarter` for a resolved `XMakeDebugLaunch` |
-| `clionSupport` | `io.xmake.clion.XMakeClionSupport` | `ClionSupport` | register the native run-config type, sync Custom Build Targets, attach compile_commands |
+| `clionSupport` | `io.xmake.clion.XMakeClionSupport` | `ClionSupport` | register the native "Xmake Executable" run-config type, sync per-target run configs, attach compile_commands |
 
 `XMakeDebugSupport.find()/isAvailable()` and `XMakeClionSupport.find()/isAvailable()` return
 `null`/`false` on IDEA Community, and every caller degrades to a no-op. When adding a CLion-only
 capability: add a method to the relevant root interface, implement it in `:clion-debug` (delegating
 to an `*Integration` object that guards with a `Class.forName` `isAvailable()` check), and never
 import CLion classes from root. Data crossing the boundary uses plain public classes in
-`io.xmake.clion` / `io.xmake.debug` (e.g. `XMakeBuildTargetSpec`, `XMakeDebugLaunch`) — not JSON,
-since `:clion-debug` compiles against root.
+`io.xmake.clion` / `io.xmake.debug` (e.g. `XMakeExecutableTargetSpec`, `XMakeDebugLaunch`) — not
+JSON, since `:clion-debug` compiles against root.
 
 ## Core architecture
 
@@ -130,14 +130,19 @@ lists for the profile editor.
 - `XMakeClionActivity` (startup): registers the native run-config type via `XMakeClionSupport`, then
   drives `XMakeClionTargetSync` on `XMAKE_INFO_TOPIC` / `XMakeBuildProfileManager.TOPIC` /
   `ExecutionTargetManager.TOPIC`.
-- `XMakeClionTargetSync` (`@Service`, debounced): for the active profile, discovers targets
+- `XMakeClionTargetSync` (`@Service`, debounced): for the **active** profile, discovers targets
   (`project/target/discoverXMakeBuildTargets`), resolves each executable path
   (`project/target/resolveXMakeTargetPath` → `xmake l scripts/targetpath.lua`, `__begin__…__end__`),
-  builds an `XMakeBuildTargetSpec`, and calls `XMakeClionSupport.syncBuildTargets` + refreshes
-  compile_commands. LOCAL toolkits only.
-- `:clion-debug` side: `CustomBuildTargetsIntegration` + `CLionBuildTargetRegistrar.java` (Java,
-  because `CLionProjectToolManager` is Kotlin-`internal`) install CLion Custom Build Targets and
-  ready-to-run `XMakeExecutableRunConfigurationType` configs; `CompDBIntegration` links the
+  builds an `XMakeExecutableTargetSpec`, calls `XMakeClionSupport.syncExecutableRunConfigurations`,
+  and refreshes compile_commands. LOCAL toolkits only.
+- `XMakeExecutableBuildBeforeRunTask` / `…Provider` (root `stepsBeforeRunProvider`): the *only*
+  before-run step on every native "Xmake Executable" config. It runs `xmake config` + `xmake build
+  <config name>` for `activeOrSingleXMakeBuildProfile` (that profile's toolkit, `xmake f` args, and
+  isolated `XMAKE_CONFIGDIR`), so the binary CLion runs/debugs always matches the selected profile.
+- `:clion-debug` side: `XMakeExecutableConfigIntegration` creates/refreshes one
+  `CLionExternalRunConfiguration` (type `XMakeExecutableRunConfigurationType`) per target, sets its
+  `ExecutableData`, and replaces its before-run list with the task above — it is **not** bound to a
+  CLion Custom Build Target (whose build ignores the profile). `CompDBIntegration` links the
   compilation database.
 
 ### Console / tool window
