@@ -13,6 +13,7 @@ class DebugAction : XMakeProjectAction() {
 
     override fun update(e: AnActionEvent) {
         super.update(e)
+        e.hideForSelectedXMakeExecutableConfig()
         if (!e.presentation.isEnabledAndVisible) return
 
         if (e.project == null) return

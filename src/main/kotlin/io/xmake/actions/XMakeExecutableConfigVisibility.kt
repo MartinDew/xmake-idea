@@ -13,24 +13,21 @@
  * limitations under the License.
  *
  * Copyright (C) 2015-present, Xmake Open Source Community.
- *
- * @author      ruki
- * @file        RunAction.kt
- *
  */
 package io.xmake.actions
 
-import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.project.Project
+import io.xmake.utils.SystemUtils
 
-class RunAction : XMakeProjectAction() {
-    override fun execute(project: Project) {
-        launchSelectedXMakeRunConfiguration(project, DefaultRunExecutor.getRunExecutorInstance())
-    }
-
-    override fun update(e: AnActionEvent) {
-        super.update(e)
-        e.hideForSelectedXMakeExecutableConfig()
+/**
+ * Hides the plugin's own build/run/debug actions while a native "Xmake Executable" run
+ * configuration is selected: CLion builds, runs, and debugs those targets itself, so the
+ * XMake-console equivalents would only be confusing.
+ */
+internal fun AnActionEvent.hideForSelectedXMakeExecutableConfig() {
+    if (!presentation.isEnabledAndVisible) return
+    val project = project ?: return
+    if (SystemUtils.isXMakeExecutableConfigSelected(project)) {
+        presentation.isEnabledAndVisible = false
     }
 }

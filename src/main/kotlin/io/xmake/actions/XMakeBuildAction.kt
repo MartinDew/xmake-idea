@@ -18,6 +18,7 @@ package io.xmake.actions
 
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
@@ -28,6 +29,11 @@ import io.xmake.run.command.XMakeCommandFactory
 import io.xmake.run.target.activeOrSingleXMakeBuildProfile
 
 abstract class XMakeBuildAction : XMakeProjectAction() {
+    override fun update(e: AnActionEvent) {
+        super.update(e)
+        e.hideForSelectedXMakeExecutableConfig()
+    }
+
     final override fun execute(project: Project) {
         val profile = project.activeOrSingleXMakeBuildProfile
         if (profile == null) {

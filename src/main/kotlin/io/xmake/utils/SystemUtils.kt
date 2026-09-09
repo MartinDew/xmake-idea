@@ -188,6 +188,22 @@ object SystemUtils {
     fun isXMakeProject(project: Project): Boolean {
         return project.basePath?.let { File(it, "xmake.lua").exists() } == true
     }
+
+    /**
+     * Type id of the native "Xmake Executable" run configuration, registered dynamically by the
+     * optional CLion debug module (see `io.xmake.debug.clion.XMakeExecutableRunConfigurationType`).
+     * Kept here so the core plugin can recognize it without a compile-time dependency on that module.
+     */
+    const val XMAKE_EXECUTABLE_CONFIG_TYPE_ID = "io.xmake.XMakeExecutable"
+
+    /**
+     * Whether the selected run configuration is a native "Xmake Executable" config. Those are
+     * built, run, and debugged natively by CLion, so the plugin's own XMake toolbar/menu build
+     * actions do not apply and are hidden.
+     */
+    fun isXMakeExecutableConfigSelected(project: Project): Boolean =
+        com.intellij.execution.RunManager.getInstance(project)
+            .selectedConfiguration?.type?.id == XMAKE_EXECUTABLE_CONFIG_TYPE_ID
 }
 
 val VirtualFile.pathAsPath: Path get() = Paths.get(path)

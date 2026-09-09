@@ -20,6 +20,7 @@
  */
 package io.xmake.actions
 
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import io.xmake.project.console.XMakeConsole
 import io.xmake.run.command.XMakeCommandFactory
@@ -27,6 +28,11 @@ import io.xmake.run.command.XMakeConsoleOptions
 import io.xmake.run.command.xmakeExecutionService
 
 class CleanConfigurationAction : XMakeCommandAction() {
+
+    override fun update(e: AnActionEvent) {
+        super.update(e)
+        e.hideForSelectedXMakeExecutableConfig()
+    }
 
     override suspend fun execute(
         project: Project,
