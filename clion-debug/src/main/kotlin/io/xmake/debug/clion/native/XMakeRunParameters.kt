@@ -17,7 +17,6 @@
 package io.xmake.debug.clion.native
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.openapi.util.SystemInfo
 import com.jetbrains.cidr.execution.Installer
 import com.jetbrains.cidr.execution.RunParameters
 import com.jetbrains.cidr.execution.TrivialInstaller
@@ -26,7 +25,6 @@ import com.jetbrains.cidr.execution.debugger.backend.gdb.GDBDriverConfiguration
 import com.jetbrains.cidr.execution.debugger.backend.lldb.LLDBDriverConfiguration
 import io.xmake.debug.DapDriverDetector
 import io.xmake.debug.XMakeDebugLaunch
-import io.xmake.debug.clion.utils.Logger
 
 /**
  * Drives CLion's own native GDB/LLDB engine ([com.jetbrains.cidr.execution.debugger.CidrLocalDebugProcess])
@@ -43,23 +41,19 @@ internal class XMakeRunParameters(private val launch: XMakeDebugLaunch) : RunPar
 
     override fun getDebuggerDriverConfiguration(): DebuggerDriverConfiguration =
         when (launch.driver.type) {
+            // GDB has no CLion-bundled fallback: point it at the real gdb binary xmake's
+            // toolchain resolved (the same binary GDB's own MI protocol always used, DAP or not).
             DapDriverDetector.DapDriverType.GDB_DAP -> object : GDBDriverConfiguration() {
                 override fun getGDBExecutablePath(): String = launch.driver.path
             }
 
-            else -> if (SystemInfo.isWindows) {
-                // CLion rejects a custom LLDB path on Windows ("Custom LLDB is not supported on
-                // Windows") — only the bundled LLDB works there, so leave it unconfigured.
-                Logger.i(TAG, "Using CLion's bundled LLDB on Windows instead of ${launch.driver.path}")
-                LLDBDriverConfiguration()
-            } else {
-                LLDBDriverConfiguration().apply { customLLDBPath = launch.driver.path }
-            }
+            // LLDB is different: CLion bundles its own LLDB build speaking a private CIDR RPC
+            // protocol, not DAP. `launch.driver.path` here is whatever DapDriverDetector found
+            // (lldb-dap/lldb-vscode) for the *DAP* path — pointing LLDBDriverConfiguration at it
+            // is wrong on every platform (it doesn't speak that protocol), not just the Windows
+            // "Custom LLDB is not supported" case. Always use the bundled LLDB instead.
+            else -> LLDBDriverConfiguration()
         }
 
     override fun getArchitectureId(): String? = null
-
-    private companion object {
-        const val TAG = "XMakeRunParameters"
-    }
 }
