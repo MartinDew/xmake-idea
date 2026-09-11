@@ -40,10 +40,6 @@ import org.jdom.Element
 
 private typealias NoBuildTarget = CidrBuildTarget<CidrBuildConfiguration>
 
-/**
- * A [CLionRunConfiguration] without a CLion build model: xmake builds the target (a before-launch
- * step) and CLion's own runner launches/debugs the result, so the active debug profile applies.
- */
 class XMakeClionRunConfiguration(
     project: Project,
     factory: ConfigurationFactory,
@@ -55,7 +51,6 @@ class XMakeClionRunConfiguration(
 
     override var preferredBuildProfileId: String? = null
 
-    // The executable comes from xmake on each launch (XMakeClionLauncher), never from stored data.
     private var executableData: ExecutableData? = null
 
     override fun getExecutableData(): ExecutableData? = executableData
@@ -66,7 +61,6 @@ class XMakeClionRunConfiguration(
 
     override fun getHelper(): CidrBuildConfigurationHelper<CidrBuildConfiguration, NoBuildTarget> = NoBuildTargets
 
-    // No CLion resolve configuration: xmake projects feed IntelliSense via the compilation database.
     override fun getResolveConfiguration(target: ExecutionTarget): OCResolveConfiguration? = null
 
     override fun canRunOn(target: ExecutionTarget): Boolean = XMakeClionLaunchBridge.canRunOn(project, target)

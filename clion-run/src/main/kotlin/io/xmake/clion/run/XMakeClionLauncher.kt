@@ -26,10 +26,6 @@ import io.xmake.clion.XMakeClionLaunchBridge
 import java.io.File
 import java.nio.file.Path
 
-/**
- * Supplies CLion with the binary xmake built. Everything else — process creation, and which
- * debugger to use (the active debug profile) — is inherited from [CLionLauncher].
- */
 internal class XMakeClionLauncher(
     environment: ExecutionEnvironment,
     private val xmakeConfiguration: XMakeClionRunConfiguration,
@@ -37,7 +33,6 @@ internal class XMakeClionLauncher(
 
     override fun getRunFileAndEnvironment(): Pair<File, CPPEnvironment> {
         val built = builtTarget()
-        // A CLion toolchain only supplies the debuggee's environment; the debug profile picks the debugger.
         val toolchain = CPPToolchains.getInstance().defaultToolchain
             ?: throw ExecutionException(
                 "CLion has no default toolchain. Configure one in Settings | Build, Execution, Deployment | Toolchains.",
@@ -45,11 +40,8 @@ internal class XMakeClionLauncher(
         return built.executable to CPPEnvironment(toolchain)
     }
 
-    // Match the other XMake launch paths: run from the xmake working directory, not the binary's folder.
     override fun getDefaultWorkingDir(executable: Path): String = builtTarget().workingDirectory
 
-    // Built by XMakeClionBuildBeforeRunTaskProvider; CLion's profile runner hands us a different
-    // ExecutionEnvironment than that step saw, so the bridge looks it up by profile + target.
     private fun builtTarget(): XMakeBuiltTarget =
         XMakeClionLaunchBridge.resolveBuilt(project, executionEnvironment.executionTarget, xmakeConfiguration.runTarget)
 }

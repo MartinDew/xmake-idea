@@ -24,8 +24,6 @@ dependencies {
         bundledModule("intellij.cidr.runner")
         bundledModule("intellij.cidr.execution")
         bundledModule("intellij.cidr.projectModel")
-        // Compile-time only: CLionLauncher's inherited signatures mention CidrDebugProfile. This
-        // module is JetBrains-internal, so it must never be declared in xmake-idea.clion-run.xml.
         bundledModule("intellij.cidr.debugger.profiles")
     }
 }

@@ -24,7 +24,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import io.xmake.icons.XMakeIcons
 
-/** CLion-only XMake configuration: debugged by CLion's own runner, so debug profiles apply. */
 class XMakeClionRunConfigurationType : ConfigurationTypeBase(
     ID,
     "XMake Application (CLion)",
@@ -42,7 +41,6 @@ class XMakeClionRunConfigurationType : ConfigurationTypeBase(
                 providerID: Key<out BeforeRunTask<BeforeRunTask<*>>>,
                 task: BeforeRunTask<out BeforeRunTask<*>>,
             ) {
-                // CLion's own build steps expect CLion build targets, which this configuration has none of.
                 task.isEnabled = providerID == XMakeClionBuildBeforeRunTaskProvider.ID
             }
         })

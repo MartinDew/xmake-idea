@@ -25,16 +25,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 
-/**
- * Runs [task] through [ProjectTaskManager] — the same path the Build/Clean actions use, so it
- * shows in CLion's Build tool window — and suspends until it finishes. Throws on failure.
- */
 internal suspend fun runXMakeBuildTask(project: Project, task: XMakeBuildTask) {
     if (project.isDisposed) {
         throw ExecutionException("Project was disposed before XMake could start")
     }
     val result = withContext(Dispatchers.EDT) {
-        // xmake reads sources and xmake.lua from disk; build what the user sees in the editor.
         FileDocumentManager.getInstance().saveAllDocuments()
         suspendCancellableCoroutine { continuation ->
             val promise = ProjectTaskManager.getInstance(project).run(task)

@@ -139,7 +139,6 @@ private class TargetSynchronizer(
         autoConfigure(profileId)
     }
 
-    /** QoL: reconfigure the newly active profile as soon as the user switches to it. */
     private fun autoConfigure(profileId: String) {
         val profile = project.xmakeBuildProfiles.findProfile(profileId) ?: return
         ApplicationManager.getApplication().executeOnPooledThread {

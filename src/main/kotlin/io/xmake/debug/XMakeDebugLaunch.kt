@@ -29,16 +29,13 @@ data class XMakeDebugLaunch(
     val workingDirectory: String,
 )
 
-/** How the target is debugged. Each variant carries only the settings that apply to it. */
 sealed interface XMakeDebugDriver {
     val displayName: String
 
-    /** Default: CLion's own bundled LLDB, driven in-process. Takes no configuration. */
     data object BundledLldb : XMakeDebugDriver {
         override val displayName: String = "CLion bundled LLDB"
     }
 
-    /** Opt-in: an external DAP adapter process. Owns every DAP-specific setting. */
     data class Dap(
         val info: DapDriverDetector.DapDriverInfo,
         val launchConfiguration: String,

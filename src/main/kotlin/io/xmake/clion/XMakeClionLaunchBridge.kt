@@ -33,26 +33,16 @@ import io.xmake.run.target.requireXMakeBuildProfileFor
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-/** An xmake target built for a CLion-launched run configuration. */
 data class XMakeBuiltTarget(
     val executable: File,
     val workingDirectory: String,
 )
 
-/**
- * The public surface the CLion-only run configuration (`:clion-run`) uses; everything xmake-specific
- * (profiles, commands, the build task, target-path resolution) stays in root.
- */
 object XMakeClionLaunchBridge {
 
     fun canRunOn(project: Project, target: ExecutionTarget): Boolean =
         project.findXMakeBuildProfileFor(target) != null
 
-    /**
-     * Configures and builds [targetName] for the profile selected by [executionTarget] through
-     * CLion's Build tool window, then resolves and remembers the built executable. Blocks; call
-     * off the EDT.
-     */
     @RequiresBackgroundThread
     fun buildAndResolve(project: Project, executionTarget: ExecutionTarget, targetName: String): XMakeBuiltTarget {
         val profile = project.requireXMakeBuildProfileFor(executionTarget)
@@ -72,12 +62,6 @@ object XMakeClionLaunchBridge {
         return built
     }
 
-    /**
-     * The executable [buildAndResolve] last produced for this profile and target. Keyed by
-     * profile/target rather than by [com.intellij.execution.runners.ExecutionEnvironment]: CLion's
-     * debug-profile runner launches with a different environment than the before-launch step saw.
-     * Falls back to querying xmake (blocking) when nothing was built in this session.
-     */
     fun resolveBuilt(project: Project, executionTarget: ExecutionTarget, targetName: String): XMakeBuiltTarget {
         val profile = project.requireXMakeBuildProfileFor(executionTarget)
         project.service<XMakeBuiltTargetCache>().get(profile.id, targetName)
