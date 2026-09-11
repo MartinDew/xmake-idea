@@ -2,3 +2,4 @@ rootProject.name = "xmake-idea"
 
 include(":clion-debug")
 include(":clion-compdb")
+include(":clion-run")

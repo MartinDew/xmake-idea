@@ -55,6 +55,7 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
         pluginModule(project(":clion-debug"))
         pluginModule(project(":clion-compdb"))
+        pluginModule(project(":clion-run"))
     }
     testImplementation("junit:junit:4.13.2")
 }

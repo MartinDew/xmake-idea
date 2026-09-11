@@ -63,19 +63,23 @@ internal suspend fun prepareXMakeDebugLaunch(
     )
 }
 
-private fun resolveTarget(state: XMakeDebugState, output: String): File {
+private fun resolveTarget(state: XMakeDebugState, output: String): File =
+    resolveXMakeTargetExecutable(state.targetName, output, state.targetPathCommand.workingDirectory)
+
+/** Parses the `targetpath.lua` query output (`__begin__<path>__end__`) into an existing executable. */
+internal fun resolveXMakeTargetExecutable(targetName: String, output: String, workingDirectory: String): File {
     val path = "__begin__([\\s\\S]*?)__end__".toRegex()
         .find(output.trim())
         ?.groupValues
         ?.get(1)
         ?.trim()
         ?.takeIf { it.isNotBlank() }
-        ?: throw ExecutionException("Could not determine the executable path for ${state.targetName}")
+        ?: throw ExecutionException("Could not determine the executable path for $targetName")
 
     val targetPath = if (File(path).isAbsolute) {
         path
     } else {
-        File(state.targetPathCommand.workingDirectory, path).absolutePath
+        File(workingDirectory, path).absolutePath
     }
     val target = File(targetPath)
     if (!target.isFile) throw ExecutionException("Target executable not found: $targetPath")
