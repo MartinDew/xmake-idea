@@ -51,7 +51,8 @@ class XMakeRunConfiguration(
     name: String,
     factory: ConfigurationFactory,
 ) : LocatableConfigurationBase<RunProfileState>(project, factory, name),
-    RunConfigurationWithSuppressedDefaultDebugAction {
+    RunConfigurationWithSuppressedDefaultDebugAction,
+    XMakeProfileRunConfiguration {
 
     @OptionTag(tag = "target")
     var runTarget: String = DEFAULT_BUILD_TARGET
@@ -59,9 +60,8 @@ class XMakeRunConfiguration(
     @OptionTag(tag = "arguments")
     var runArguments: String = ""
 
-    /** Preferred profile reference; the execution target remains the runtime authority. */
     @OptionTag(tag = "buildProfile")
-    var preferredBuildProfileId: String? = null
+    override var preferredBuildProfileId: String? = null
 
     @get:Transient
     var runEnvironment: EnvironmentVariablesData = EnvironmentVariablesData.DEFAULT
