@@ -21,14 +21,12 @@ import com.jetbrains.cidr.execution.Installer
 import com.jetbrains.cidr.execution.RunParameters
 import com.jetbrains.cidr.execution.TrivialInstaller
 import com.jetbrains.cidr.execution.debugger.backend.DebuggerDriverConfiguration
-import com.jetbrains.cidr.execution.debugger.backend.gdb.GDBDriverConfiguration
 import com.jetbrains.cidr.execution.debugger.backend.lldb.LLDBDriverConfiguration
-import io.xmake.debug.DapDriverDetector
 import io.xmake.debug.XMakeDebugLaunch
 
 /**
- * Drives CLion's own native GDB/LLDB engine ([com.jetbrains.cidr.execution.debugger.CidrLocalDebugProcess])
- * directly — no external DAP driver process, unlike [io.xmake.debug.clion.dap.XMakeDapLaunchArguments].
+ * Run parameters for [com.jetbrains.cidr.execution.debugger.CidrLocalDebugProcess]: the target's
+ * command line plus CLion's bundled LLDB. Deliberately reads nothing DAP-related from [launch].
  */
 internal class XMakeRunParameters(private val launch: XMakeDebugLaunch) : RunParameters() {
 
@@ -39,21 +37,9 @@ internal class XMakeRunParameters(private val launch: XMakeDebugLaunch) : RunPar
             .withWorkDirectory(launch.workingDirectory.ifBlank { null }),
     )
 
-    override fun getDebuggerDriverConfiguration(): DebuggerDriverConfiguration =
-        when (launch.driver.type) {
-            // GDB has no CLion-bundled fallback: point it at the real gdb binary xmake's
-            // toolchain resolved (the same binary GDB's own MI protocol always used, DAP or not).
-            DapDriverDetector.DapDriverType.GDB_DAP -> object : GDBDriverConfiguration() {
-                override fun getGDBExecutablePath(): String = launch.driver.path
-            }
-
-            // LLDB is different: CLion bundles its own LLDB build speaking a private CIDR RPC
-            // protocol, not DAP. `launch.driver.path` here is whatever DapDriverDetector found
-            // (lldb-dap/lldb-vscode) for the *DAP* path — pointing LLDBDriverConfiguration at it
-            // is wrong on every platform (it doesn't speak that protocol), not just the Windows
-            // "Custom LLDB is not supported" case. Always use the bundled LLDB instead.
-            else -> LLDBDriverConfiguration()
-        }
+    // No custom path: CLion's bundled LLDB speaks CLion's own protocol (not DAP), and a custom
+    // LLDB path is rejected outright on Windows.
+    override fun getDebuggerDriverConfiguration(): DebuggerDriverConfiguration = LLDBDriverConfiguration()
 
     override fun getArchitectureId(): String? = null
 }

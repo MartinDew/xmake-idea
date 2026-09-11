@@ -52,16 +52,11 @@ internal suspend fun prepareXMakeDebugLaunch(
 ): XMakeDebugLaunch {
     val output = execution.captureStandardOutput(state.targetPathCommand)
     val target = resolveTarget(state, output)
-    val driver = resolveDriver(state)
-    if (state.useDapDriver && driver.type == DapDriverDetector.DapDriverType.GDB_DAP && !driver.dapCapable) {
-        notifyUnsupportedGdb(project, driver)
-        throw ExecutionException("GDB does not support DAP: ${driver.path}")
-    }
+    // The native path takes no driver configuration at all; DAP settings are read only in DAP mode.
+    val driver = if (state.useDapDriver) resolveDapDriver(project, state) else XMakeDebugDriver.BundledLldb
     return XMakeDebugLaunch(
         executablePath = target.absolutePath,
         driver = driver,
-        useDapDriver = state.useDapDriver,
-        launchConfiguration = state.launchConfiguration,
         arguments = state.arguments,
         environment = state.environment,
         workingDirectory = state.buildCommand.workingDirectory,
@@ -87,7 +82,7 @@ private fun resolveTarget(state: XMakeDebugState, output: String): File {
     return target
 }
 
-private fun resolveDriver(state: XMakeDebugState): DapDriverDetector.DapDriverInfo {
+private suspend fun resolveDapDriver(project: Project, state: XMakeDebugState): XMakeDebugDriver.Dap {
     val driverPath = if (!state.autoDetectDapDriver && state.configuredDapDriverPath.isNotBlank()) {
         state.configuredDapDriverPath
     } else {
@@ -95,12 +90,17 @@ private fun resolveDriver(state: XMakeDebugState): DapDriverDetector.DapDriverIn
     }
     if (driverPath.isBlank()) {
         throw ExecutionException(
-            "No debugger driver found. Please install lldb/lldb-dap or gdb, " +
+            "No DAP driver found. Please install lldb-dap or GDB with DAP support, " +
             "or specify a custom path in the debug configuration.",
         )
     }
-    return DapDriverDetector.validateDriverPath(driverPath)
-        ?: throw ExecutionException("Invalid debugger driver path: $driverPath")
+    val info = DapDriverDetector.validateDriverPath(driverPath)
+        ?: throw ExecutionException("Invalid DAP driver path: $driverPath")
+    if (info.type == DapDriverDetector.DapDriverType.GDB_DAP && !info.dapCapable) {
+        notifyUnsupportedGdb(project, info)
+        throw ExecutionException("GDB does not support DAP: ${info.path}")
+    }
+    return XMakeDebugDriver.Dap(info, state.launchConfiguration)
 }
 
 private suspend fun notifyUnsupportedGdb(

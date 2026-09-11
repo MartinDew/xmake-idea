@@ -31,7 +31,6 @@ import com.intellij.execution.runners.AsyncProgramRunner
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.showRunContent
 import com.intellij.execution.ui.RunContentDescriptor
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
@@ -122,29 +121,21 @@ class XMakeRunner : AsyncProgramRunner<RunnerSettings>() {
             ?: throw ExecutionException("XMake debug support is not available in this IDE")
         val launch = prepareXMakeDebugLaunch(state, environment.project, execution)
 
-        // CidrLocalDebugProcess's constructor (the native GDB/LLDB path) blocks synchronously on
-        // a modal-progress call while it loads the target. Dispatching that through a suspend
-        // coroutine's withContext(Dispatchers.EDT) nests it inside our own coroutine machinery;
-        // plain invokeAndWait matches how a classic (non-coroutine) ProgramRunner would invoke it.
-        var outcome: Result<RunContentDescriptor>? = null
-        ApplicationManager.getApplication().invokeAndWait {
-            outcome = runCatching {
-                ensureProjectIsOpen(environment.project)
-                val starter = debugSupport.createProcessStarter(launch, environment)
-                val session = XDebuggerManager.getInstance(environment.project)
-                    .newSessionBuilder(starter)
-                    .environment(environment)
-                    .startSession()
-                session.runContentDescriptor ?: run {
-                    val error = ExecutionException("Failed to create the XMake debug descriptor")
-                    runCatching { session.session.stop() }
-                        .exceptionOrNull()
-                        ?.let(error::addSuppressed)
-                    throw error
-                }
+        return withContext(Dispatchers.EDT) {
+            ensureProjectIsOpen(environment.project)
+            val starter = debugSupport.createProcessStarter(launch, environment)
+            val session = XDebuggerManager.getInstance(environment.project)
+                .newSessionBuilder(starter)
+                .environment(environment)
+                .startSession()
+            session.runContentDescriptor ?: run {
+                val error = ExecutionException("Failed to create the XMake debug descriptor")
+                runCatching { session.session.stop() }
+                    .exceptionOrNull()
+                    ?.let(error::addSuppressed)
+                throw error
             }
         }
-        return outcome!!.getOrThrow()
     }
 
     private suspend fun prepareConsole(project: Project): XMakeConsole {
