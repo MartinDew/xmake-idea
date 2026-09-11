@@ -14,20 +14,13 @@
  *
  * Copyright (C) 2015-present, Xmake Open Source Community.
  */
-package io.xmake.debug
+package io.xmake.debug.clion
 
-/**
- * Immutable boundary between cancellable background preparation and the
- * EDT-owned XDebugger session startup. Every value originates from the same
- * XMake run configuration captured before preparation begins.
- */
-data class XMakeDebugLaunch(
-    val executablePath: String,
-    val driver: DapDriverDetector.DapDriverInfo,
-    /** false (default): drive CLion's own native GDB/LLDB engine. true: spawn an external DAP driver process. */
-    val useDapDriver: Boolean,
-    val launchConfiguration: String,
-    val arguments: List<String>,
-    val environment: Map<String, String>,
-    val workingDirectory: String,
-)
+import com.intellij.openapi.project.Project
+import io.xmake.clion.XMakeClionSupport
+
+/** Bridges xmake's generated compile database into CLion's Compilation Database / IntelliSense. */
+class ClionSupport : XMakeClionSupport {
+    override fun attachCompileCommands(project: Project, compileCommandsPath: String): Boolean =
+        CompDBIntegration.attachCompileCommands(project, compileCommandsPath)
+}

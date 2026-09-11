@@ -98,6 +98,7 @@ class XMakeProjectTaskRunner : ProjectTaskRunner() {
                     },
                 ).awaitSuccessfulCompletion()
             }
+            task.onSuccess?.invoke()
         }
 
         complete(processHandler, completed, SUCCESS_EXIT_CODE) {

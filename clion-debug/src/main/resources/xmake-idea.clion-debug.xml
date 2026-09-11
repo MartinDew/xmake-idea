@@ -4,10 +4,12 @@
         <module name="intellij.cidr.debugger.core"/>
         <plugin id="com.intellij.modules.clion"/>
         <plugin id="com.intellij.nativeDebug"/>
+        <plugin id="com.intellij.clion-compdb"/>
     </dependencies>
 
     <extensions defaultExtensionNs="io.xmake">
         <debugSupport implementation="io.xmake.debug.clion.ClionDebugSupport"/>
+        <clionSupport implementation="io.xmake.debug.clion.ClionSupport"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.platform.dap">

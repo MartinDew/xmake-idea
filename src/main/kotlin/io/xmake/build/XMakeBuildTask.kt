@@ -24,6 +24,8 @@ import io.xmake.run.command.XMAKE_CONFIG_DIRECTORY_ENV
 internal class XMakeBuildTask(
     private val presentableName: String,
     commands: List<XMakeCommand>,
+    /** Invoked once every command has completed successfully; not called on failure/cancellation. */
+    val onSuccess: (() -> Unit)? = null,
 ) : ProjectTask {
     val commands: List<XMakeCommand> = commands.toList()
     val workingDirectory: String

@@ -6,6 +6,7 @@
 
     <extensionPoints>
         <extensionPoint name="debugSupport" interface="io.xmake.debug.XMakeDebugSupport"/>
+        <extensionPoint name="clionSupport" interface="io.xmake.clion.XMakeClionSupport"/>
         <extensionPoint name="toolkitHostExtension" interface="io.xmake.utils.extension.ToolkitHostExtension"
                         dynamic="true"/>
     </extensionPoints>

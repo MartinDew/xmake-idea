@@ -25,21 +25,27 @@ import io.xmake.debug.XMakeDebugSupport
 import io.xmake.debug.clion.dap.XMakeDapLaunchArguments
 import io.xmake.debug.clion.dap.XMakeDapLaunchState
 import io.xmake.debug.clion.dap.XMakeDebugAdapterId
+import io.xmake.debug.clion.native.XMakeLocalDebugProcessStarter
 import io.xmake.debug.clion.utils.Logger
 
-/** Connects resolved XMake launches to IntelliJ Platform's public DAP lifecycle. */
+/**
+ * Connects resolved XMake launches to CLion's debugger. By default drives CLion's own native
+ * GDB/LLDB engine in-process ([XMakeLocalDebugProcessStarter]); when the run configuration opts
+ * into [XMakeDebugLaunch.useDapDriver], spawns an external DAP driver process through IntelliJ
+ * Platform's public DAP lifecycle instead.
+ */
 class ClionDebugSupport : XMakeDebugSupport {
 
     override fun createProcessStarter(
         launch: XMakeDebugLaunch,
         environment: ExecutionEnvironment,
-    ): XDebugProcessStarter {
+    ): XDebugProcessStarter = if (launch.useDapDriver) {
         Logger.i(
             TAG,
             "Creating DAP process starter: project=${environment.project.name}, " +
                 "driver=${launch.driver.displayName}, target=${launch.executablePath}",
         )
-        return DapProcessStarter(
+        DapProcessStarter(
             environment,
             environment.executor,
             XMakeDapLaunchState(launch),
@@ -47,6 +53,13 @@ class ClionDebugSupport : XMakeDebugSupport {
             DapStartRequest.Launch,
             XMakeDapLaunchArguments.create(launch, environment.project),
         )
+    } else {
+        Logger.i(
+            TAG,
+            "Creating native GDB/LLDB process starter: project=${environment.project.name}, " +
+                "driver=${launch.driver.displayName}, target=${launch.executablePath}",
+        )
+        XMakeLocalDebugProcessStarter(launch)
     }
 
     private companion object {

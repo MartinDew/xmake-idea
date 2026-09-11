@@ -25,13 +25,18 @@ import com.intellij.execution.RunManagerListener
 import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.execution.configurations.RunConfiguration
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import com.intellij.task.ProjectTaskManager
 import com.intellij.util.messages.MessageBusConnection
+import io.xmake.build.XMakeBuildTask
 import io.xmake.project.profile.XMakeBuildProfileManager
+import io.xmake.project.profile.xmakeBuildProfiles
 import io.xmake.run.XMakeRunConfiguration
+import io.xmake.run.command.XMakeCommandFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -131,6 +136,27 @@ private class TargetSynchronizer(
             ?.configuration as? XMakeRunConfiguration ?: return
         if (configuration !== trackedConfiguration) return
         configuration.preferredBuildProfileId = profileId
+        autoConfigure(profileId)
+    }
+
+    /** QoL: reconfigure the newly active profile as soon as the user switches to it. */
+    private fun autoConfigure(profileId: String) {
+        val profile = project.xmakeBuildProfiles.findProfile(profileId) ?: return
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val task = try {
+                XMakeBuildTask(
+                    presentableName = "Configure '${profile.name}'",
+                    commands = listOf(XMakeCommandFactory(project, profile).createConfigure()),
+                )
+            } catch (error: Exception) {
+                return@executeOnPooledThread
+            }
+            ApplicationManager.getApplication().invokeLater {
+                if (!project.isDisposed) {
+                    ProjectTaskManager.getInstance(project).run(task)
+                }
+            }
+        }
     }
 
     private fun switchActiveTarget(target: ExecutionTarget) {

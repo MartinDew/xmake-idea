@@ -22,6 +22,7 @@ package io.xmake.actions
 
 import com.intellij.openapi.project.Project
 import io.xmake.build.XMakeBuildTask
+import io.xmake.clion.refreshClionCompileCommands
 import io.xmake.project.profile.XMakeBuildProfile
 import io.xmake.project.xmakeSettings
 import io.xmake.run.command.XMakeCommandFactory
@@ -32,14 +33,22 @@ open class BuildAction : XMakeBuildAction() {
         project: Project,
         profile: XMakeBuildProfile,
         commandFactory: XMakeCommandFactory,
-    ): XMakeBuildTask = XMakeBuildTask(
-        presentableName = "Build '${profile.name}'",
-        commands = buildList {
-            add(commandFactory.createConfigure())
-            add(commandFactory.createBuild())
-            if (project.xmakeSettings.state.autoUpdateCompileCommands) {
-                add(commandFactory.createUpdateCompileCommands())
-            }
-        },
-    )
+    ): XMakeBuildTask {
+        val updateCompileCommands = project.xmakeSettings.state.autoUpdateCompileCommands
+        return XMakeBuildTask(
+            presentableName = "Build '${profile.name}'",
+            commands = buildList {
+                add(commandFactory.createConfigure())
+                add(commandFactory.createBuild())
+                if (updateCompileCommands) {
+                    add(commandFactory.createUpdateCompileCommands())
+                }
+            },
+            onSuccess = if (updateCompileCommands) {
+                { refreshClionCompileCommands(project) }
+            } else {
+                null
+            },
+        )
+    }
 }

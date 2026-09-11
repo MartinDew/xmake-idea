@@ -69,7 +69,10 @@ class XMakeRunConfigurationEditor(
     private val runArguments = RawCommandLineEditor()
     private val environmentVariables = EnvironmentVariablesComponent(project)
 
-    private val dapDriverAutoDetect = JBCheckBox("Auto-detect DAP driver")
+    private val useDapDriver = JBCheckBox(
+        "Use DAP driver (spawns an external debug adapter process instead of CLion's native GDB/LLDB engine)",
+    )
+    private val dapDriverAutoDetect = JBCheckBox("Auto-detect debugger driver")
     private val dapDriverPath = TextFieldWithBrowseButton().apply {
         val descriptor = FileChooserDescriptorFactory.singleFile().apply {
             title = "Select DAP Driver"
@@ -146,6 +149,13 @@ class XMakeRunConfigurationEditor(
                 }
             }
         }
+        useDapDriver.addItemListener { event ->
+            if (event.stateChange != ItemEvent.SELECTED && event.stateChange != ItemEvent.DESELECTED) {
+                return@addItemListener
+            }
+            scrollableLaunchConfiguration.isEnabled = useDapDriver.isSelected
+            launchConfiguration.isEnabled = useDapDriver.isSelected
+        }
     }
 
     override fun resetEditorFrom(configuration: XMakeRunConfiguration) {
@@ -159,12 +169,15 @@ class XMakeRunConfigurationEditor(
             buildTargetModel.selectedItem = selectedBuildTarget
             runArguments.text = configuration.runArguments
             environmentVariables.envData = configuration.runEnvironment
+            useDapDriver.isSelected = configuration.useDapDriver
             dapDriverAutoDetect.isSelected = configuration.dapDriverAutoDetect
             dapDriverPath.text = configuration.dapDriverPath
             launchConfiguration.text = configuration.launchConfiguration.ifBlank {
                 XMakeRunConfiguration.getDefaultLaunchConfigJson()
             }
             dapDriverPath.isEnabled = !dapDriverAutoDetect.isSelected
+            scrollableLaunchConfiguration.isEnabled = useDapDriver.isSelected
+            launchConfiguration.isEnabled = useDapDriver.isSelected
         } finally {
             isResetting = false
         }
@@ -175,6 +188,7 @@ class XMakeRunConfigurationEditor(
         configuration.runTarget = buildTargetModel.selectedItem?.toString() ?: DEFAULT_BUILD_TARGET
         configuration.runArguments = runArguments.text
         configuration.runEnvironment = environmentVariables.envData
+        configuration.useDapDriver = useDapDriver.isSelected
         configuration.dapDriverAutoDetect = dapDriverAutoDetect.isSelected
         configuration.dapDriverPath = dapDriverPath.text
         configuration.launchConfiguration = launchConfiguration.text
@@ -195,12 +209,15 @@ class XMakeRunConfigurationEditor(
 
         collapsibleGroup("Debug Configuration") {
             row {
+                cell(useDapDriver)
+            }
+            row {
                 cell(dapDriverAutoDetect)
             }
-            row("DAP driver:") {
+            row("Debugger driver:") {
                 cell(dapDriverPath).align(AlignX.FILL)
             }
-            row("Launch configuration:") {
+            row("DAP launch configuration:") {
                 cell(scrollableLaunchConfiguration).align(AlignX.FILL)
             }
         }

@@ -26,6 +26,7 @@ import com.intellij.openapi.ui.MasterDetailsComponent
 import com.intellij.openapi.ui.ValidationInfo
 import io.xmake.project.profile.XMakeBuildProfile
 import io.xmake.project.profile.xmakeBuildProfiles
+import java.util.UUID
 import javax.swing.JComponent
 import javax.swing.tree.DefaultTreeModel
 
@@ -93,8 +94,11 @@ internal class XMakeBuildProfilesEditor(
 
     override fun createActions(fromPopup: Boolean): List<AnAction> = listOf(
         AddProfileAction(),
+        DuplicateProfileAction(),
         MyDeleteAction { selected -> myRoot.childCount > selected.size },
     )
+
+    private fun selectedNode(): MyNode? = tree.selectionPath?.lastPathComponent as? MyNode
 
     private fun preselectProfile(profileId: String?) {
         val node = (0 until myRoot.childCount)
@@ -122,6 +126,31 @@ internal class XMakeBuildProfilesEditor(
             val editor = XMakeBuildProfileEditor(project, profile, TREE_UPDATER)
             val node = MyNode(editor)
             (tree.model as DefaultTreeModel).insertNodeInto(node, myRoot, myRoot.childCount)
+            selectNodeInTree(node)
+        }
+    }
+
+    private inner class DuplicateProfileAction : DumbAwareAction(
+        "Duplicate",
+        "Duplicate the selected XMake build profile",
+        AllIcons.Actions.Copy,
+    ) {
+        override fun update(event: AnActionEvent) {
+            event.presentation.isEnabled = selectedNode() != null
+        }
+
+        override fun actionPerformed(event: AnActionEvent) {
+            val sourceNode = selectedNode() ?: return
+            val sourceEditor = sourceNode.configurable as? XMakeBuildProfileEditor ?: return
+            val names = profileEditors().mapTo(mutableSetOf()) { editor -> editor.displayName.trim() }
+            val duplicate = sourceEditor.profile.copy(
+                id = UUID.randomUUID().toString(),
+                name = XMakeBuildProfile.uniqueName("${sourceEditor.profile.name} (Copy)", names),
+            )
+            val editor = XMakeBuildProfileEditor(project, duplicate, TREE_UPDATER)
+            val node = MyNode(editor)
+            val index = myRoot.getIndex(sourceNode) + 1
+            (tree.model as DefaultTreeModel).insertNodeInto(node, myRoot, index)
             selectNodeInTree(node)
         }
     }
