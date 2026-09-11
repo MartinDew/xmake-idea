@@ -18,6 +18,7 @@ package io.xmake.build
 
 import com.intellij.execution.ExecutionException
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.task.ProjectTaskManager
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,8 @@ internal suspend fun runXMakeBuildTask(project: Project, task: XMakeBuildTask) {
         throw ExecutionException("Project was disposed before XMake could start")
     }
     val result = withContext(Dispatchers.EDT) {
+        // xmake reads sources and xmake.lua from disk; build what the user sees in the editor.
+        FileDocumentManager.getInstance().saveAllDocuments()
         suspendCancellableCoroutine { continuation ->
             val promise = ProjectTaskManager.getInstance(project).run(task)
             promise.onSuccess { result -> continuation.resumeWith(Result.success(result)) }
