@@ -20,6 +20,7 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.platform.dap.DapProcessStarter
 import com.intellij.platform.dap.DapStartRequest
 import com.intellij.xdebugger.XDebugProcessStarter
+import io.xmake.debug.XMakeDebugDriver
 import io.xmake.debug.XMakeDebugLaunch
 import io.xmake.debug.XMakeDebugSupport
 import io.xmake.debug.clion.dap.XMakeDapLaunchArguments
@@ -29,37 +30,32 @@ import io.xmake.debug.clion.native.XMakeLocalDebugProcessStarter
 import io.xmake.debug.clion.utils.Logger
 
 /**
- * Connects resolved XMake launches to CLion's debugger. By default drives CLion's own native
- * GDB/LLDB engine in-process ([XMakeLocalDebugProcessStarter]); when the run configuration opts
- * into [XMakeDebugLaunch.useDapDriver], spawns an external DAP driver process through IntelliJ
- * Platform's public DAP lifecycle instead.
+ * Connects resolved XMake launches to CLion's debugger. By default drives CLion's own bundled
+ * LLDB in-process ([XMakeLocalDebugProcessStarter]); a [XMakeDebugDriver.Dap] launch instead spawns
+ * an external DAP driver process through IntelliJ Platform's public DAP lifecycle.
  */
 class ClionDebugSupport : XMakeDebugSupport {
 
     override fun createProcessStarter(
         launch: XMakeDebugLaunch,
         environment: ExecutionEnvironment,
-    ): XDebugProcessStarter = if (launch.useDapDriver) {
+    ): XDebugProcessStarter {
         Logger.i(
             TAG,
-            "Creating DAP process starter: project=${environment.project.name}, " +
+            "Creating debug process starter: project=${environment.project.name}, " +
                 "driver=${launch.driver.displayName}, target=${launch.executablePath}",
         )
-        DapProcessStarter(
-            environment,
-            environment.executor,
-            XMakeDapLaunchState(launch),
-            XMakeDebugAdapterId,
-            DapStartRequest.Launch,
-            XMakeDapLaunchArguments.create(launch, environment.project),
-        )
-    } else {
-        Logger.i(
-            TAG,
-            "Creating native GDB/LLDB process starter: project=${environment.project.name}, " +
-                "driver=${launch.driver.displayName}, target=${launch.executablePath}",
-        )
-        XMakeLocalDebugProcessStarter(launch)
+        return when (val driver = launch.driver) {
+            XMakeDebugDriver.BundledLldb -> XMakeLocalDebugProcessStarter(launch)
+            is XMakeDebugDriver.Dap -> DapProcessStarter(
+                environment,
+                environment.executor,
+                XMakeDapLaunchState(launch, driver),
+                XMakeDebugAdapterId,
+                DapStartRequest.Launch,
+                XMakeDapLaunchArguments.create(launch, driver, environment.project),
+            )
+        }
     }
 
     private companion object {

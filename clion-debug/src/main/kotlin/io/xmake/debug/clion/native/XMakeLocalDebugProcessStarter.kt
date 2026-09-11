@@ -23,13 +23,18 @@ import com.intellij.xdebugger.XDebugSession
 import com.jetbrains.cidr.execution.debugger.CidrLocalDebugProcess
 import io.xmake.debug.XMakeDebugLaunch
 
-/** Starts an [XDebugProcess] driven by CLion's own native GDB/LLDB engine, in-process. */
+/** Starts an [XDebugProcess] driven by CLion's own bundled LLDB, in-process. */
 internal class XMakeLocalDebugProcessStarter(
     private val launch: XMakeDebugLaunch,
 ) : XDebugProcessStarter() {
 
     override fun start(session: XDebugSession): XDebugProcess {
         val consoleBuilder = TextConsoleBuilderFactory.getInstance().createBuilder(session.project)
-        return CidrLocalDebugProcess(XMakeRunParameters(launch), session, consoleBuilder)
+        return CidrLocalDebugProcess(XMakeRunParameters(launch), session, consoleBuilder).apply {
+            // Required: start() queues doLoadTarget and moves the process to STARTED. Without it the
+            // launch command posted by sessionInitialized() is a silent no-op — the driver boots and
+            // registers breakpoints, but no target is ever created or run.
+            start()
+        }
     }
 }

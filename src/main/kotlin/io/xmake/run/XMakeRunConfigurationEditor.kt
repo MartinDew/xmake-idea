@@ -70,9 +70,9 @@ class XMakeRunConfigurationEditor(
     private val environmentVariables = EnvironmentVariablesComponent(project)
 
     private val useDapDriver = JBCheckBox(
-        "Use DAP driver (spawns an external debug adapter process instead of CLion's native GDB/LLDB engine)",
+        "Use an external DAP driver instead of CLion's bundled LLDB",
     )
-    private val dapDriverAutoDetect = JBCheckBox("Auto-detect debugger driver")
+    private val dapDriverAutoDetect = JBCheckBox("Auto-detect DAP driver")
     private val dapDriverPath = TextFieldWithBrowseButton().apply {
         val descriptor = FileChooserDescriptorFactory.singleFile().apply {
             title = "Select DAP Driver"
@@ -142,7 +142,7 @@ class XMakeRunConfigurationEditor(
             if (event.stateChange != ItemEvent.SELECTED && event.stateChange != ItemEvent.DESELECTED) {
                 return@addItemListener
             }
-            dapDriverPath.isEnabled = !dapDriverAutoDetect.isSelected
+            updateDapControls()
             if (!isResetting && dapDriverAutoDetect.isSelected) {
                 DapDriverDetector.findBestDriver()?.let { driver ->
                     replaceDefaultLaunchConfiguration(driver.type.displayName)
@@ -153,9 +153,17 @@ class XMakeRunConfigurationEditor(
             if (event.stateChange != ItemEvent.SELECTED && event.stateChange != ItemEvent.DESELECTED) {
                 return@addItemListener
             }
-            scrollableLaunchConfiguration.isEnabled = useDapDriver.isSelected
-            launchConfiguration.isEnabled = useDapDriver.isSelected
+            updateDapControls()
         }
+    }
+
+    /** Every DAP setting is inert unless the DAP driver is selected; the bundled LLDB takes none. */
+    private fun updateDapControls() {
+        val dap = useDapDriver.isSelected
+        dapDriverAutoDetect.isEnabled = dap
+        dapDriverPath.isEnabled = dap && !dapDriverAutoDetect.isSelected
+        scrollableLaunchConfiguration.isEnabled = dap
+        launchConfiguration.isEnabled = dap
     }
 
     override fun resetEditorFrom(configuration: XMakeRunConfiguration) {
@@ -175,9 +183,7 @@ class XMakeRunConfigurationEditor(
             launchConfiguration.text = configuration.launchConfiguration.ifBlank {
                 XMakeRunConfiguration.getDefaultLaunchConfigJson()
             }
-            dapDriverPath.isEnabled = !dapDriverAutoDetect.isSelected
-            scrollableLaunchConfiguration.isEnabled = useDapDriver.isSelected
-            launchConfiguration.isEnabled = useDapDriver.isSelected
+            updateDapControls()
         } finally {
             isResetting = false
         }
@@ -214,7 +220,7 @@ class XMakeRunConfigurationEditor(
             row {
                 cell(dapDriverAutoDetect)
             }
-            row("Debugger driver:") {
+            row("DAP driver:") {
                 cell(dapDriverPath).align(AlignX.FILL)
             }
             row("DAP launch configuration:") {
