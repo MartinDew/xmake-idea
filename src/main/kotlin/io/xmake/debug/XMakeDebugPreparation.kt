@@ -21,37 +21,46 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
-import io.xmake.project.console.XMakeConsole
-import io.xmake.run.command.XMakeConsoleOptions
+import io.xmake.build.XMakeBuildTask
+import io.xmake.build.runXMakeBuildTask
 import io.xmake.run.command.XMakeExecutionService
 import io.xmake.run.state.XMakeDebugState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
+/**
+ * Builds the debug target through [com.intellij.task.ProjectTaskManager] (same path as the Build
+ * action, so it shows in CLion's Build tool window). Must run *before* [prepareXMakeDebugLaunch]
+ * acquires the XMake execution mutex — see [io.xmake.run.command.XMakeExecutionService.submitAfter].
+ */
+internal suspend fun prepareXMakeDebugBuild(project: Project, state: XMakeDebugState) {
+    warnAboutBuildMode(project, state.buildMode)
+    runXMakeBuildTask(
+        project,
+        XMakeBuildTask(
+            presentableName = "Build '${state.targetName}'",
+            commands = listOf(state.configureCommand, state.buildCommand),
+        ),
+    )
+}
+
 internal suspend fun prepareXMakeDebugLaunch(
     state: XMakeDebugState,
     project: Project,
-    console: XMakeConsole,
     execution: XMakeExecutionService,
 ): XMakeDebugLaunch {
-    warnAboutBuildMode(project, state.buildMode)
-    execution.execute(console, state.configureCommand)
-    execution.execute(
-        console,
-        state.buildCommand,
-        XMakeConsoleOptions(showConsole = false, showProblems = true),
-    )
     val output = execution.captureStandardOutput(state.targetPathCommand)
     val target = resolveTarget(state, output)
     val driver = resolveDriver(state)
-    if (driver.type == DapDriverDetector.DapDriverType.GDB_DAP && !driver.dapCapable) {
+    if (state.useDapDriver && driver.type == DapDriverDetector.DapDriverType.GDB_DAP && !driver.dapCapable) {
         notifyUnsupportedGdb(project, driver)
         throw ExecutionException("GDB does not support DAP: ${driver.path}")
     }
     return XMakeDebugLaunch(
         executablePath = target.absolutePath,
         driver = driver,
+        useDapDriver = state.useDapDriver,
         launchConfiguration = state.launchConfiguration,
         arguments = state.arguments,
         environment = state.environment,
@@ -86,12 +95,12 @@ private fun resolveDriver(state: XMakeDebugState): DapDriverDetector.DapDriverIn
     }
     if (driverPath.isBlank()) {
         throw ExecutionException(
-            "No DAP driver found. Please install lldb-dap or GDB with DAP support, " +
+            "No debugger driver found. Please install lldb/lldb-dap or gdb, " +
             "or specify a custom path in the debug configuration.",
         )
     }
     return DapDriverDetector.validateDriverPath(driverPath)
-        ?: throw ExecutionException("Invalid DAP driver path: $driverPath")
+        ?: throw ExecutionException("Invalid debugger driver path: $driverPath")
 }
 
 private suspend fun notifyUnsupportedGdb(

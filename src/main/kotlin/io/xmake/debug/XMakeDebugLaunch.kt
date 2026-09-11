@@ -24,6 +24,8 @@ package io.xmake.debug
 data class XMakeDebugLaunch(
     val executablePath: String,
     val driver: DapDriverDetector.DapDriverInfo,
+    /** false (default): drive CLion's own native GDB/LLDB engine. true: spawn an external DAP driver process. */
+    val useDapDriver: Boolean,
     val launchConfiguration: String,
     val arguments: List<String>,
     val environment: Map<String, String>,
