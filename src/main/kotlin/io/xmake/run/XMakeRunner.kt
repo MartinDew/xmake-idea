@@ -71,9 +71,6 @@ class XMakeRunner : AsyncProgramRunner<RunnerSettings>() {
                 val console = prepareConsole(project)
                 executeRun(execution, state, environment, console)
             }
-            // The build runs through ProjectTaskManager *before* the mutex is acquired: it takes
-            // the mutex itself internally, and the mutex is not reentrant (see
-            // XMakeExecutionService.submitAfter).
             is XMakeDebugState -> execution.submitAfter(
                 before = { prepareXMakeDebugBuild(project, state) },
                 task = {

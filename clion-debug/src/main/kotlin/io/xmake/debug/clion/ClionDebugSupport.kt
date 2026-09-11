@@ -29,11 +29,6 @@ import io.xmake.debug.clion.dap.XMakeDebugAdapterId
 import io.xmake.debug.clion.native.XMakeLocalDebugProcessStarter
 import io.xmake.debug.clion.utils.Logger
 
-/**
- * Connects resolved XMake launches to CLion's debugger. By default drives CLion's own bundled
- * LLDB in-process ([XMakeLocalDebugProcessStarter]); a [XMakeDebugDriver.Dap] launch instead spawns
- * an external DAP driver process through IntelliJ Platform's public DAP lifecycle.
- */
 class ClionDebugSupport : XMakeDebugSupport {
 
     override fun createProcessStarter(

@@ -24,10 +24,6 @@ import com.jetbrains.cidr.execution.debugger.backend.DebuggerDriverConfiguration
 import com.jetbrains.cidr.execution.debugger.backend.lldb.LLDBDriverConfiguration
 import io.xmake.debug.XMakeDebugLaunch
 
-/**
- * Run parameters for [com.jetbrains.cidr.execution.debugger.CidrLocalDebugProcess]: the target's
- * command line plus CLion's bundled LLDB. Deliberately reads nothing DAP-related from [launch].
- */
 internal class XMakeRunParameters(private val launch: XMakeDebugLaunch) : RunParameters() {
 
     override fun getInstaller(): Installer = TrivialInstaller(
@@ -37,8 +33,6 @@ internal class XMakeRunParameters(private val launch: XMakeDebugLaunch) : RunPar
             .withWorkDirectory(launch.workingDirectory.ifBlank { null }),
     )
 
-    // No custom path: CLion's bundled LLDB speaks CLion's own protocol (not DAP), and a custom
-    // LLDB path is rejected outright on Windows.
     override fun getDebuggerDriverConfiguration(): DebuggerDriverConfiguration = LLDBDriverConfiguration()
 
     override fun getArchitectureId(): String? = null

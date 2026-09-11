@@ -32,10 +32,6 @@ import javax.swing.Icon
 
 class XMakeClionBuildBeforeRunTask : BeforeRunTask<XMakeClionBuildBeforeRunTask>(XMakeClionBuildBeforeRunTaskProvider.ID)
 
-/**
- * Builds the configuration's xmake target (in CLion's Build tool window); the bridge remembers the
- * resulting executable for [XMakeClionLauncher]. Before-launch steps run off the EDT, so blocking is fine.
- */
 class XMakeClionBuildBeforeRunTaskProvider : BeforeRunTaskProvider<XMakeClionBuildBeforeRunTask>() {
 
     override fun getId(): Key<XMakeClionBuildBeforeRunTask> = ID

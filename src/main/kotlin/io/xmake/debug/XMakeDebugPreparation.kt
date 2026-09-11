@@ -29,11 +29,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/**
- * Builds the debug target through [com.intellij.task.ProjectTaskManager] (same path as the Build
- * action, so it shows in CLion's Build tool window). Must run *before* [prepareXMakeDebugLaunch]
- * acquires the XMake execution mutex — see [io.xmake.run.command.XMakeExecutionService.submitAfter].
- */
 internal suspend fun prepareXMakeDebugBuild(project: Project, state: XMakeDebugState) {
     warnAboutBuildMode(project, state.buildMode)
     runXMakeBuildTask(
@@ -52,7 +47,6 @@ internal suspend fun prepareXMakeDebugLaunch(
 ): XMakeDebugLaunch {
     val output = execution.captureStandardOutput(state.targetPathCommand)
     val target = resolveTarget(state, output)
-    // The native path takes no driver configuration at all; DAP settings are read only in DAP mode.
     val driver = if (state.useDapDriver) resolveDapDriver(project, state) else XMakeDebugDriver.BundledLldb
     return XMakeDebugLaunch(
         executablePath = target.absolutePath,
@@ -66,7 +60,6 @@ internal suspend fun prepareXMakeDebugLaunch(
 private fun resolveTarget(state: XMakeDebugState, output: String): File =
     resolveXMakeTargetExecutable(state.targetName, output, state.targetPathCommand.workingDirectory)
 
-/** Parses the `targetpath.lua` query output (`__begin__<path>__end__`) into an existing executable. */
 internal fun resolveXMakeTargetExecutable(targetName: String, output: String, workingDirectory: String): File {
     val path = "__begin__([\\s\\S]*?)__end__".toRegex()
         .find(output.trim())

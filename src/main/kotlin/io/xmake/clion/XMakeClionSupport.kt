@@ -19,10 +19,8 @@ package io.xmake.clion
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
 
-/** Bridges xmake's generated compile database into CLion's own IntelliSense, without coupling the core plugin to CLion. */
 interface XMakeClionSupport {
 
-    /** Link (if needed) and refresh CLion's Compilation Database from [compileCommandsPath]. */
     fun attachCompileCommands(project: Project, compileCommandsPath: String): Boolean
 
     companion object {

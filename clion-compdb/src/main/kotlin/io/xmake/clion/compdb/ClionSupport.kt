@@ -19,7 +19,6 @@ package io.xmake.clion.compdb
 import com.intellij.openapi.project.Project
 import io.xmake.clion.XMakeClionSupport
 
-/** Bridges xmake's generated compile database into CLion's Compilation Database / IntelliSense. */
 class ClionSupport : XMakeClionSupport {
     override fun attachCompileCommands(project: Project, compileCommandsPath: String): Boolean =
         CompDBIntegration.attachCompileCommands(project, compileCommandsPath)

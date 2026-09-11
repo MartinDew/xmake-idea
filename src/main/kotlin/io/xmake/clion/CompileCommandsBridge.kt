@@ -20,11 +20,6 @@ import com.intellij.openapi.project.Project
 import io.xmake.project.xmakeSettings
 import java.io.File
 
-/**
- * Resolve the local `compile_commands.json` from the configured output path
- * ([io.xmake.project.XMakeSettings]) relative to the project root. Mirrors where
- * `xmake project -k compile_commands <path>` writes the file.
- */
 fun compileCommandsFile(project: Project): File? {
     val base = project.basePath ?: return null
     val configured = project.xmakeSettings.state.compileCommandsPath.trim()
@@ -35,7 +30,6 @@ fun compileCommandsFile(project: Project): File? {
     }
 }
 
-/** Refresh CLion IntelliSense from the generated compile database, if present. On non-CLion IDEs this is a no-op. */
 fun refreshClionCompileCommands(project: Project) {
     val support = XMakeClionSupport.find() ?: return
     val file = compileCommandsFile(project) ?: return

@@ -27,19 +27,10 @@ import com.jetbrains.cidr.cpp.compdb.settings.CompDBProjectSettings
 import com.jetbrains.cidr.cpp.compdb.settings.CompDBSettings
 import java.io.File
 
-/**
- * Feeds CLion IntelliSense from xmake's generated `compile_commands.json` by linking it into
- * CLion's Compilation Database external system (`com.intellij.clion-compdb`) and refreshing it.
- * Lives in its own content module so debugging never depends on the compdb plugin being enabled.
- */
 internal object CompDBIntegration {
 
     private val LOG = logger<CompDBIntegration>()
 
-    /** Link (if needed) and refresh the compilation database at [compileCommandsPath]. Returns
-     * true if the attach was scheduled. The actual link+refresh runs on the EDT — `linkProject`
-     * mutates external-system settings and fires listeners, which must not happen on an arbitrary
-     * background thread (this is called from xmake process-termination callbacks). */
     fun attachCompileCommands(project: Project, compileCommandsPath: String): Boolean {
         val file = File(compileCommandsPath)
         if (!file.isFile) {
