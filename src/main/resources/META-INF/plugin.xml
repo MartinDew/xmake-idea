@@ -23,6 +23,7 @@
 
     <content>
         <module name="xmake-idea.clion-debug" loading="optional"/>
+        <module name="xmake-idea.clion-compdb" loading="optional"/>
     </content>
 
     <extensions defaultExtensionNs="com.intellij">

@@ -1,0 +1,10 @@
+<idea-plugin>
+    <dependencies>
+        <plugin id="com.intellij.modules.clion"/>
+        <plugin id="com.intellij.clion-compdb"/>
+    </dependencies>
+
+    <extensions defaultExtensionNs="io.xmake">
+        <clionSupport implementation="io.xmake.clion.compdb.ClionSupport"/>
+    </extensions>
+</idea-plugin>

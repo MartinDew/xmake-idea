@@ -14,7 +14,7 @@
  *
  * Copyright (C) 2015-present, Xmake Open Source Community.
  */
-package io.xmake.debug.clion
+package io.xmake.clion.compdb
 
 import com.intellij.openapi.project.Project
 import io.xmake.clion.XMakeClionSupport
