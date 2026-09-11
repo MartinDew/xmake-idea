@@ -55,18 +55,18 @@ class XMakeRunConfiguration(
     XMakeProfileRunConfiguration {
 
     @OptionTag(tag = "target")
-    var runTarget: String = DEFAULT_BUILD_TARGET
+    override var runTarget: String = DEFAULT_BUILD_TARGET
 
     @OptionTag(tag = "arguments")
     var runArguments: String = ""
 
+    /** Preferred profile reference; the execution target remains the runtime authority. */
     @OptionTag(tag = "buildProfile")
     override var preferredBuildProfileId: String? = null
 
     @get:Transient
     var runEnvironment: EnvironmentVariablesData = EnvironmentVariablesData.DEFAULT
 
-    /** false (default): debug via CLion's own native GDB/LLDB driver. true: spawn an external DAP driver process. */
     @OptionTag(tag = "useDapDriver")
     var useDapDriver: Boolean = false
 
