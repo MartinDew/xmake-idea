@@ -17,6 +17,7 @@
 package io.xmake.debug.clion.native
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.openapi.util.SystemInfo
 import com.jetbrains.cidr.execution.Installer
 import com.jetbrains.cidr.execution.RunParameters
 import com.jetbrains.cidr.execution.TrivialInstaller
@@ -25,6 +26,7 @@ import com.jetbrains.cidr.execution.debugger.backend.gdb.GDBDriverConfiguration
 import com.jetbrains.cidr.execution.debugger.backend.lldb.LLDBDriverConfiguration
 import io.xmake.debug.DapDriverDetector
 import io.xmake.debug.XMakeDebugLaunch
+import io.xmake.debug.clion.utils.Logger
 
 /**
  * Drives CLion's own native GDB/LLDB engine ([com.jetbrains.cidr.execution.debugger.CidrLocalDebugProcess])
@@ -45,8 +47,19 @@ internal class XMakeRunParameters(private val launch: XMakeDebugLaunch) : RunPar
                 override fun getGDBExecutablePath(): String = launch.driver.path
             }
 
-            else -> LLDBDriverConfiguration().apply { customLLDBPath = launch.driver.path }
+            else -> if (SystemInfo.isWindows) {
+                // CLion rejects a custom LLDB path on Windows ("Custom LLDB is not supported on
+                // Windows") — only the bundled LLDB works there, so leave it unconfigured.
+                Logger.i(TAG, "Using CLion's bundled LLDB on Windows instead of ${launch.driver.path}")
+                LLDBDriverConfiguration()
+            } else {
+                LLDBDriverConfiguration().apply { customLLDBPath = launch.driver.path }
+            }
         }
 
     override fun getArchitectureId(): String? = null
+
+    private companion object {
+        const val TAG = "XMakeRunParameters"
+    }
 }
